@@ -6,10 +6,28 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
+    path: Assets/LevelScenes/Run/Cell.unity
+    guid: c240d8eecf653f84e8797a99e7b3b23c
+  - enabled: 1
+    path: Assets/LevelScenes/Run/Floor1.unity
+    guid: ddba5942d97b5014fa2fc7039b4ba6f7
+  - enabled: 1
+    path: Assets/LevelScenes/Run/Floor2.unity
+    guid: 8c368d3de9c4d4f478a8a086eadaab86
+  - enabled: 1
+    path: Assets/LevelScenes/Run/Floor3.unity
+    guid: 4da297a8e6cfb0645ba0b6c91227a403
+  - enabled: 1
+    path: Assets/LevelScenes/Run/Floor4.unity
+    guid: 515b8c94402100e47925ca60700769ae
+  - enabled: 1
+    path: Assets/LevelScenes/Run/Boss.unity
+    guid: ee6da4fa5cbb7bc4eaf8800e72df729d
+  - enabled: 1
+    path: Assets/LevelScenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   - enabled: 1
-    path: Assets/Scenes/CombatTest.unity
+    path: Assets/LevelScenes/CombatTest.unity
     guid: 22f7be943b5bb1f4a86212c799eba836
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

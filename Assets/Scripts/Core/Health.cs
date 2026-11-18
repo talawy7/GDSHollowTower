@@ -34,6 +34,8 @@ namespace HollowTower.Core
         public event Action<float, GameObject> OnDamaged;
         /// <summary>(killer) — killer can be null.</summary>
         public event Action<GameObject> OnDied;
+        /// <summary>(who, amount) — any Health anywhere took damage. Handy for damage numbers and stats.</summary>
+        public static event Action<Health, float> OnAnyDamaged;
 
         private void Awake()
         {
@@ -60,6 +62,7 @@ namespace HollowTower.Core
 
             Current = Mathf.Max(0f, Current - amount);
             OnDamaged?.Invoke(amount, source);
+            OnAnyDamaged?.Invoke(this, amount);
             OnHealthChanged?.Invoke(Current, maxHealth);
 
             if (Current <= 0f)
@@ -73,6 +76,14 @@ namespace HollowTower.Core
         {
             if (IsDead || amount <= 0f) return;
             Current = Mathf.Min(maxHealth, Current + amount);
+            OnHealthChanged?.Invoke(Current, maxHealth);
+        }
+
+        /// <summary>Used by the RunManager to carry health from one floor to the next.</summary>
+        public void SetCurrent(float value)
+        {
+            if (IsDead) return;
+            Current = Mathf.Clamp(value, 1f, maxHealth);
             OnHealthChanged?.Invoke(Current, maxHealth);
         }
 

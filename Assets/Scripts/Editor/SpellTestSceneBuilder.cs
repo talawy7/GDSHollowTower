@@ -64,58 +64,11 @@ namespace HollowTower.EditorTools
                 if (AssetDatabase.LoadMainAssetAtPath(p) != null || AssetDatabase.IsValidFolder(p))
                     AssetDatabase.DeleteAsset(p);
 
-            EnsureFolder("Assets", "Data");
-            EnsureFolder(DataDir, "Elements");
-            EnsureFolder(DataDir, "Enemies");
-            EnsureFolder(DataDir, "Materials");
-            EnsureFolder("Assets", "Resources");
-            EnsureFolder("Assets", "Prefabs");
-            EnsureFolder("Assets/Prefabs", "Enemies");
-            EnsureFolder("Assets", "Scenes");
-
-            // ---------- data ----------
-            var stats = LoadOrCreate<PlayerStats>($"{DataDir}/PlayerStats.asset", s => { });
-            LoadOrCreate<CombatSettings>("Assets/Resources/CombatSettings.asset", s => { });
-            var fire = LoadOrCreate<ElementData>($"{ElementDir}/Fire.asset", SetupFire);
-            var ice = LoadOrCreate<ElementData>($"{ElementDir}/Ice.asset", SetupIce);
-            var lightning = LoadOrCreate<ElementData>($"{ElementDir}/Lightning.asset", SetupLightning);
-
-            var goblinData = LoadOrCreate<EnemyData>($"{EnemyDataDir}/Goblin.asset", d =>
-            {
-                d.id = "Goblin"; d.displayName = "Goblin";
-                d.maxHealth = 20f; d.moveSpeed = 4.2f; d.detectionRange = 14f;
-                d.attackDamage = 5f; d.attackRange = 1.4f;
-                d.attackWindup = 0.35f; d.attackRecovery = 0.4f; d.attackCooldown = 0.9f;
-                d.soulInk = 1;
-            });
-            var knightData = LoadOrCreate<EnemyData>($"{EnemyDataDir}/Knight.asset", d =>
-            {
-                d.id = "Knight"; d.displayName = "Knight";
-                d.maxHealth = 90f; d.moveSpeed = 2.2f; d.turnSpeed = 240f; d.detectionRange = 14f;
-                d.attackDamage = 20f; d.attackRange = 2.4f; d.attackAreaRadius = 1.7f;
-                d.attackWindup = 0.9f; d.attackRecovery = 0.8f; d.attackCooldown = 1.6f;
-                d.soulInk = 3;
-            });
-            var ghostData = LoadOrCreate<EnemyData>($"{EnemyDataDir}/Ghost.asset", d =>
-            {
-                d.id = "Ghost"; d.displayName = "Ghost";
-                d.maxHealth = 25f; d.moveSpeed = 3f; d.detectionRange = 16f;
-                d.attackDamage = 8f; d.attackRange = 10f;
-                d.attackWindup = 0.6f; d.attackRecovery = 0.4f; d.attackCooldown = 2.2f;
-                d.preferredDistance = 8f; d.retreatDistance = 4.5f;
-                d.projectileSpeed = 7f; d.projectileRadius = 0.3f;
-                d.hoverHeight = 0.5f; d.soulInk = 2;
-            });
-
-            var floorMat  = LoadOrCreateMat("Floor",  new Color(0.22f, 0.22f, 0.25f));
-            var wallMat   = LoadOrCreateMat("Wall",   new Color(0.16f, 0.17f, 0.22f));
-            var pillarMat = LoadOrCreateMat("Pillar", new Color(0.30f, 0.27f, 0.24f));
-            var playerMat = LoadOrCreateMat("Player", new Color(0.35f, 0.2f, 0.5f));
-            var dummyMat  = LoadOrCreateMat("Dummy",  new Color(0.45f, 0.4f, 0.32f));
-
-            var goblinPrefab = LoadOrCreateEnemyPrefab<GoblinEnemy>("Goblin", goblinData, GoblinModel, 1.8f, 0.4f, 0f);
-            var knightPrefab = LoadOrCreateEnemyPrefab<KnightEnemy>("Knight", knightData, KnightModel, 1.9f, 0.5f, 0f);
-            var ghostPrefab  = LoadOrCreateEnemyPrefab<GhostEnemy>("Ghost", ghostData, GhostModel, 1.6f, 0.4f, 0.4f);
+            var a = EnsureCoreAssets();
+            var stats = a.stats; var fire = a.fire; var ice = a.ice; var lightning = a.lightning;
+            var goblinPrefab = a.goblin; var knightPrefab = a.knight; var ghostPrefab = a.ghost;
+            var floorMat = a.floorMat; var wallMat = a.wallMat; var pillarMat = a.pillarMat;
+            var playerMat = a.playerMat; var dummyMat = a.dummyMat;
 
             // ---------- scene ----------
             var sun = Object.FindAnyObjectByType<Light>();
@@ -182,6 +135,75 @@ namespace HollowTower.EditorTools
             AssetDatabase.SaveAssets();
             Selection.activeGameObject = player;
             Debug.Log("[Hollow Tower] Combat test scene built at " + ScenePath + ". Press Play.");
+        }
+
+
+        /// <summary>Everything the test and run scenes need. Creates only what's missing.</summary>
+        internal class CoreAssets
+        {
+            public PlayerStats stats;
+            public ElementData fire, ice, lightning;
+            public GameObject goblin, knight, ghost;
+            public Material floorMat, wallMat, pillarMat, playerMat, dummyMat;
+        }
+
+        internal static CoreAssets EnsureCoreAssets()
+        {
+            var a = new CoreAssets();
+            EnsureFolder("Assets", "Data");
+            EnsureFolder(DataDir, "Elements");
+            EnsureFolder(DataDir, "Enemies");
+            EnsureFolder(DataDir, "Materials");
+            EnsureFolder("Assets", "Resources");
+            EnsureFolder("Assets", "Prefabs");
+            EnsureFolder("Assets/Prefabs", "Enemies");
+            EnsureFolder("Assets", "Scenes");
+
+            // ---------- data ----------
+            a.stats = LoadOrCreate<PlayerStats>($"{DataDir}/PlayerStats.asset", s => { });
+            LoadOrCreate<CombatSettings>("Assets/Resources/CombatSettings.asset", s => { });
+            a.fire = LoadOrCreate<ElementData>($"{ElementDir}/Fire.asset", SetupFire);
+            a.ice = LoadOrCreate<ElementData>($"{ElementDir}/Ice.asset", SetupIce);
+            a.lightning = LoadOrCreate<ElementData>($"{ElementDir}/Lightning.asset", SetupLightning);
+
+            var goblinData = LoadOrCreate<EnemyData>($"{EnemyDataDir}/Goblin.asset", d =>
+            {
+                d.id = "Goblin"; d.displayName = "Goblin";
+                d.maxHealth = 20f; d.moveSpeed = 4.2f; d.detectionRange = 14f;
+                d.attackDamage = 5f; d.attackRange = 1.4f;
+                d.attackWindup = 0.35f; d.attackRecovery = 0.4f; d.attackCooldown = 0.9f;
+                d.soulInk = 1;
+            });
+            var knightData = LoadOrCreate<EnemyData>($"{EnemyDataDir}/Knight.asset", d =>
+            {
+                d.id = "Knight"; d.displayName = "Knight";
+                d.maxHealth = 90f; d.moveSpeed = 2.2f; d.turnSpeed = 240f; d.detectionRange = 14f;
+                d.attackDamage = 20f; d.attackRange = 2.4f; d.attackAreaRadius = 1.7f;
+                d.attackWindup = 0.9f; d.attackRecovery = 0.8f; d.attackCooldown = 1.6f;
+                d.soulInk = 3;
+            });
+            var ghostData = LoadOrCreate<EnemyData>($"{EnemyDataDir}/Ghost.asset", d =>
+            {
+                d.id = "Ghost"; d.displayName = "Ghost";
+                d.maxHealth = 25f; d.moveSpeed = 3f; d.detectionRange = 16f;
+                d.attackDamage = 8f; d.attackRange = 10f;
+                d.attackWindup = 0.6f; d.attackRecovery = 0.4f; d.attackCooldown = 2.2f;
+                d.preferredDistance = 8f; d.retreatDistance = 4.5f;
+                d.projectileSpeed = 7f; d.projectileRadius = 0.3f;
+                d.hoverHeight = 0.5f; d.soulInk = 2;
+            });
+
+            a.floorMat = LoadOrCreateMat("Floor",  new Color(0.22f, 0.22f, 0.25f));
+            a.wallMat = LoadOrCreateMat("Wall",   new Color(0.16f, 0.17f, 0.22f));
+            a.pillarMat = LoadOrCreateMat("Pillar", new Color(0.30f, 0.27f, 0.24f));
+            a.playerMat = LoadOrCreateMat("Player", new Color(0.35f, 0.2f, 0.5f));
+            a.dummyMat = LoadOrCreateMat("Dummy",  new Color(0.45f, 0.4f, 0.32f));
+
+            a.goblin = LoadOrCreateEnemyPrefab<GoblinEnemy>("Goblin", goblinData, GoblinModel, 1.8f, 0.4f, 0f);
+            a.knight = LoadOrCreateEnemyPrefab<KnightEnemy>("Knight", knightData, KnightModel, 1.9f, 0.5f, 0f);
+            a.ghost = LoadOrCreateEnemyPrefab<GhostEnemy>("Ghost", ghostData, GhostModel, 1.6f, 0.4f, 0.4f);
+
+            return a;
         }
 
         // ---------- GDD 5.2 numbers ----------
@@ -269,7 +291,7 @@ namespace HollowTower.EditorTools
 
         // ---------- player ----------
 
-        private static GameObject BuildPlayer(Material playerMat, Material markerMat, PlayerStats stats,
+        internal static GameObject BuildPlayer(Material playerMat, Material markerMat, PlayerStats stats,
                                               ElementData slot1, ElementData slot2)
         {
             var player = GameObject.CreatePrimitive(PrimitiveType.Capsule);
@@ -389,12 +411,12 @@ namespace HollowTower.EditorTools
 
         // ---------- helpers ----------
 
-        private static void EnsureFolder(string parent, string name)
+        internal static void EnsureFolder(string parent, string name)
         {
             if (!AssetDatabase.IsValidFolder($"{parent}/{name}")) AssetDatabase.CreateFolder(parent, name);
         }
 
-        private static T LoadOrCreate<T>(string path, System.Action<T> init) where T : ScriptableObject
+        internal static T LoadOrCreate<T>(string path, System.Action<T> init) where T : ScriptableObject
         {
             var existing = AssetDatabase.LoadAssetAtPath<T>(path);
             if (existing != null) return existing;
@@ -404,7 +426,7 @@ namespace HollowTower.EditorTools
             return asset;
         }
 
-        private static Material LoadOrCreateMat(string name, Color color)
+        internal static Material LoadOrCreateMat(string name, Color color)
         {
             string path = $"{MatDir}/{name}.mat";
             var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -415,7 +437,7 @@ namespace HollowTower.EditorTools
             return mat;
         }
 
-        private static GameObject Block(string name, Transform parent, Vector3 pos, Vector3 scale, Material mat)
+        internal static GameObject Block(string name, Transform parent, Vector3 pos, Vector3 scale, Material mat)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
             go.name = name;
@@ -427,7 +449,7 @@ namespace HollowTower.EditorTools
             return go;
         }
 
-        private static void SetRef(Object target, string field, Object value)
+        internal static void SetRef(Object target, string field, Object value)
         {
             var so = new SerializedObject(target);
             var prop = so.FindProperty(field);
@@ -436,13 +458,13 @@ namespace HollowTower.EditorTools
             so.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static void SetArray(SerializedProperty arr, params Object[] items)
+        internal static void SetArray(SerializedProperty arr, params Object[] items)
         {
             arr.arraySize = items.Length;
             for (int i = 0; i < items.Length; i++) arr.GetArrayElementAtIndex(i).objectReferenceValue = items[i];
         }
 
-        private static void AddSceneToBuildSettings(string path)
+        internal static void AddSceneToBuildSettings(string path)
         {
             var scenes = EditorBuildSettings.scenes.ToList();
             if (scenes.Any(s => s.path == path)) return;

@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2cefa5d1ad0199444be23c236c047dfc, type: 3}
+  m_Name: Floor3
+  m_EditorClassIdentifier: Assembly-CSharp::HollowTower.Data.FloorData
+  displayName: Knights' Hall
+  description: 'Knights: slow and tough with big telegraphed swings. Dodge, then punish.'
+  waves:
+  - note: guard post
+    enemies:
+    - enemyPrefab: {fileID: 811451750433201433, guid: d81bb5cbbbe0def448980283aa0a4997, type: 3}
+      count: 1
+      eliteChance: 0
+    - enemyPrefab: {fileID: 7118056578968252570, guid: 878422ee2ee48b04eb675474c5552eaf, type: 3}
+      count: 3
+      eliteChance: 0
+    startNextWhenRemaining: 0
+  - note: patrol
+    enemies:
+    - enemyPrefab: {fileID: 811451750433201433, guid: d81bb5cbbbe0def448980283aa0a4997, type: 3}
+      count: 2
+      eliteChance: 0
+    - enemyPrefab: {fileID: 6700694051971279475, guid: 1a8c6cbd0efdd4946bbcd329c9b7b3a5, type: 3}
+      count: 1
+      eliteChance: 0
+    startNextWhenRemaining: 1
+  - note: captains
+    enemies:
+    - enemyPrefab: {fileID: 811451750433201433, guid: d81bb5cbbbe0def448980283aa0a4997, type: 3}
+      count: 2
+      eliteChance: 0.5
+    startNextWhenRemaining: 0
+  timeBeforeFirstWave: 2
+  timeBetweenWaves: 2.5
+  healthBonusPerFloorCleared: 0.15

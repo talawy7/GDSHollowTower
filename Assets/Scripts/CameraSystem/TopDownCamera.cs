@@ -1,5 +1,6 @@
 // AI-assisted: Claude (Anthropic) wrote the first version of this script.
 // Team changes: (none yet)
+// Week 4: Claude made it find the player automatically if no target is set.
 //
 // GDD 2: top-down 2.5D, fixed camera. The camera keeps a fixed angle and
 // smoothly follows the witch. Put this on the Main Camera.
@@ -37,7 +38,14 @@ namespace HollowTower.CameraSystem
 
         private void LateUpdate()
         {
-            if (target == null) return;
+            if (target == null)
+            {
+                // Floor scenes don't need the target set by hand: follow the player.
+                var player = FindAnyObjectByType<HollowTower.Player.PlayerController>();
+                if (player == null) return;
+                target = player.transform;
+                transform.position = DesiredPosition();
+            }
             ApplyRotation();
             transform.position = smoothTime <= 0f
                 ? DesiredPosition()

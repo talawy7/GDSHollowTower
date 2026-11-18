@@ -1,5 +1,6 @@
 // AI-assisted: Claude (Anthropic) wrote the first version of this script.
 // Team changes: (none yet)
+// Week 4: Claude added Configure() and Alert() for the wave spawner.
 //
 // Base enemy with a finite state machine (GDD Part A: "Enemy AI: state machines + NavMesh").
 //
@@ -67,14 +68,44 @@ namespace HollowTower.Enemies
                 enabled = false;
                 return;
             }
-            health.SetMax(data.maxHealth * (isElite ? data.eliteHealthMultiplier : 1f), refill: true);
-            if (isElite) transform.localScale *= data.eliteScale;
+            baseScale = transform.localScale;
+            ApplyStats();
             if (anim != null && data.hoverHeight > 0f) anim.SetHoverHeight(data.hoverHeight);
 
             // The agent is turned on in Start, after the room has built its NavMesh.
             agent.enabled = false;
             agent.updateRotation = false; // we turn the enemy ourselves
         }
+
+        private Vector3 baseScale;
+        private float healthMultiplier = 1f;
+
+        private void ApplyStats()
+        {
+            health.SetMax(data.maxHealth * (isElite ? data.eliteHealthMultiplier : 1f) * healthMultiplier, refill: true);
+            transform.localScale = baseScale * (isElite ? data.eliteScale : 1f);
+        }
+
+        /// <summary>
+        /// Called by the WaveSpawner right after spawning: elite or not, and extra health
+        /// for floors that come later in the run.
+        /// </summary>
+        public void Configure(bool elite, float extraHealthMultiplier)
+        {
+            if (data == null) return;
+            isElite = elite;
+            healthMultiplier = Mathf.Max(0.1f, extraHealthMultiplier);
+            ApplyStats();
+            if (elite) name += " (Elite)";
+        }
+
+        /// <summary>Start chasing the player right away, whatever the distance (wave enemies).</summary>
+        public void Alert()
+        {
+            alerted = true;
+        }
+
+        private bool alerted;
 
         protected virtual void Start()
         {
@@ -148,7 +179,7 @@ namespace HollowTower.Enemies
         protected virtual void UpdateIdle()
         {
             StopMoving();
-            if (PlayerAvailable && DistanceToPlayer <= data.detectionRange) SetState(EnemyState.Chase);
+            if (PlayerAvailable && (alerted || DistanceToPlayer <= data.detectionRange)) SetState(EnemyState.Chase);
         }
 
         /// <summary>Default (melee): run at the player and attack when close.</summary>
