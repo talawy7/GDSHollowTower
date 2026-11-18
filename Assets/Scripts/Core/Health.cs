@@ -1,5 +1,6 @@
 // AI-assisted: Claude (Anthropic) wrote the first version of this script.
 // Team changes: (none yet)
+// Week 2: Claude added the Team field so spells know who to hit.
 //
 // Generic health component. Used by the witch now, and by enemies later.
 // GDD 4.2: health does not regenerate; only rewards heal. At 0 the owner dies.
@@ -9,9 +10,15 @@ using UnityEngine;
 
 namespace HollowTower.Core
 {
+    /// <summary>Who is on which side. Spells only hurt the other team.</summary>
+    public enum Team { Player, Enemy }
+
     public class Health : MonoBehaviour
     {
         [SerializeField] private float maxHealth = 100f;
+        [SerializeField] private Team team = Team.Player;
+
+        public Team Team => team;
 
         public float Max => maxHealth;
         public float Current { get; private set; }
