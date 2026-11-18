@@ -1,9 +1,11 @@
 // AI-assisted: Claude (Anthropic) wrote the first version of this script.
 // Team changes: (none yet)
 //
-// GDD 4.3: the "element" half of a spell (Fire, Ice, Lightning).
-// The element decides damage, color and the extra effect (burn, slow, arcing).
-// Create via: Assets > Create > Hollow Tower > Spells > Element
+// GDD 5.2: one element (Fire, Ice, Lightning) and everything it can do:
+//   - Normal Attack   (left click, no cooldown)
+//   - Projectile / Orb / Nova versions (E ability)
+//   - Chain Reaction  (Q ability)
+// Create via: Assets > Create > Hollow Tower > Element
 
 using UnityEngine;
 
@@ -11,38 +13,40 @@ namespace HollowTower.Data
 {
     public enum ElementType { Fire, Ice, Lightning }
 
-    [CreateAssetMenu(fileName = "Element", menuName = "Hollow Tower/Spells/Element")]
+    [CreateAssetMenu(fileName = "Element", menuName = "Hollow Tower/Element")]
     public class ElementData : ScriptableObject
     {
         public ElementType type;
         public string displayName = "Element";
-        [Tooltip("Spell color. GDD 8: Fire orange, Ice light blue, Lightning purple-white.")]
+        [Tooltip("Spell color. GDD: Fire orange, Ice light blue, Lightning purple-white.")]
         public Color color = Color.white;
+        [TextArea] public string playstyle;
 
-        [Header("Damage and feel")]
-        [Tooltip("Multiplies the delivery's base damage. Fire = big damage.")]
-        public float damageMultiplier = 1f;
-        [Tooltip("Multiplies projectile/orb speed. Lightning = fast.")]
-        public float speedMultiplier = 1f;
-        [Tooltip("Multiplies the time between casts. Lower = cast faster.")]
-        public float cooldownMultiplier = 1f;
+        [Header("Normal Attack (left click)")]
+        public AttackData normalAttack = new AttackData { displayName = "Normal Attack" };
+        [Tooltip("Seconds between normal shots while holding left click. GDD: no cooldown, so keep this small.")]
+        public float normalFireInterval = 0.25f;
 
-        [Header("Burn (Fire)")]
-        public float burnDamagePerSecond = 0f;
-        public float burnDuration = 0f;
+        [Header("Delivery styles (E)")]
+        public AttackData projectile = new AttackData { displayName = "Projectile" };
+        public AttackData orb = new AttackData { displayName = "Orb" };
+        public AttackData nova = new AttackData { displayName = "Nova" };
 
-        [Header("Slow (Ice)")]
-        [Tooltip("0.5 = enemy moves at half speed.")]
-        [Range(0f, 0.9f)] public float slowAmount = 0f;
-        public float slowDuration = 0f;
+        [Header("Chain Reaction (Q)")]
+        public ChainReactionData chainReaction = new ChainReactionData();
 
-        [Header("Arcing (Lightning)")]
-        [Tooltip("Free chain jumps on every hit, even without the Chain modifier.")]
-        public int innateChainJumps = 0;
-
-        [Header("Unlocking (GDD 4.5)")]
+        [Header("Unlocking")]
         public bool unlockedAtStart = true;
-        [Tooltip("Soul Ink price at the Scribe if not unlocked at start.")]
-        public int soulInkCost = 0;
+        public int soulInkCost;
+
+        public AttackData GetDelivery(DeliveryType delivery)
+        {
+            switch (delivery)
+            {
+                case DeliveryType.Orb: return orb;
+                case DeliveryType.Nova: return nova;
+                default: return projectile;
+            }
+        }
     }
 }

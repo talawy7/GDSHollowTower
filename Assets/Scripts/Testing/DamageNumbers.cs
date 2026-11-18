@@ -19,11 +19,12 @@ namespace HollowTower.Testing
             public string text;
             public Color color;
             public float age;
+            public bool big;
         }
 
         private static DamageNumbers instance;
         private readonly List<Entry> entries = new List<Entry>();
-        private GUIStyle style;
+        private GUIStyle style, bigStyle;
 
         public static void Show(Vector3 worldPos, float amount, Color color)
         {
@@ -35,6 +36,16 @@ namespace HollowTower.Testing
             instance.entries.Add(new Entry { world = worldPos, text = Mathf.RoundToInt(amount).ToString(), color = color });
         }
 
+        /// <summary>Floating word, e.g. "SHATTER!" for elemental reactions.</summary>
+        public static void ShowText(Vector3 worldPos, string text, Color color)
+        {
+            if (instance == null)
+            {
+                instance = new GameObject("DamageNumbers").AddComponent<DamageNumbers>();
+            }
+            instance.entries.Add(new Entry { world = worldPos + Vector3.up * 0.8f, text = text, color = color, big = true });
+        }
+
         private void Update()
         {
             for (int i = entries.Count - 1; i >= 0; i--)
@@ -42,7 +53,7 @@ namespace HollowTower.Testing
                 var e = entries[i];
                 e.age += Time.deltaTime;
                 e.world += Vector3.up * Time.deltaTime * 1.5f;
-                if (e.age >= Lifetime) entries.RemoveAt(i);
+                if (e.age >= (e.big ? Lifetime * 1.5f : Lifetime)) entries.RemoveAt(i);
                 else entries[i] = e;
             }
         }
@@ -52,17 +63,20 @@ namespace HollowTower.Testing
             var cam = Camera.main;
             if (cam == null) return;
             style ??= new GUIStyle(GUI.skin.label) { fontSize = 18, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
+            bigStyle ??= new GUIStyle(style) { fontSize = 26 };
 
             foreach (var e in entries)
             {
                 Vector3 s = cam.WorldToScreenPoint(e.world);
                 if (s.z < 0f) continue;
-                var rect = new Rect(s.x - 40f, Screen.height - s.y - 12f, 80f, 24f);
-                float a = 1f - e.age / Lifetime;
+                var st = e.big ? bigStyle : style;
+                float w = e.big ? 220f : 80f;
+                var rect = new Rect(s.x - w / 2f, Screen.height - s.y - 16f, w, 32f);
+                float a = 1f - e.age / (e.big ? Lifetime * 1.5f : Lifetime);
                 GUI.color = new Color(0f, 0f, 0f, a);
-                GUI.Label(new Rect(rect.x + 1, rect.y + 1, rect.width, rect.height), e.text, style);
+                GUI.Label(new Rect(rect.x + 2, rect.y + 2, rect.width, rect.height), e.text, st);
                 GUI.color = new Color(e.color.r, e.color.g, e.color.b, a);
-                GUI.Label(rect, e.text, style);
+                GUI.Label(rect, e.text, st);
             }
             GUI.color = Color.white;
         }

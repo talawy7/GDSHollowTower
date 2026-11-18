@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06d2713496cf1814eae2f7fc4292f67b, type: 3}
+  m_Name: Ghost
+  m_EditorClassIdentifier: Assembly-CSharp::HollowTower.Data.EnemyData
+  id: Ghost
+  displayName: Ghost
+  maxHealth: 25
+  moveSpeed: 3
+  turnSpeed: 540
+  detectionRange: 16
+  attackDamage: 8
+  attackRange: 10
+  attackWindup: 0.6
+  attackRecovery: 0.4
+  attackCooldown: 2.2
+  attackAreaRadius: 1.6
+  preferredDistance: 8
+  retreatDistance: 4.5
+  projectileSpeed: 7
+  projectileRadius: 0.3
+  projectileColor: {r: 0.6, g: 1, b: 0.8, a: 1}
+  hoverHeight: 0.5
+  soulInk: 2
+  eliteHealthMultiplier: 2.5
+  eliteDamageMultiplier: 1.5
+  eliteScale: 1.25

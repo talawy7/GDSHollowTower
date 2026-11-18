@@ -39,27 +39,37 @@ namespace HollowTower.Spells
             go.AddComponent<GrowAndVanish>().Init(Vector3.one * size * 0.3f, Vector3.one * size, 0.15f);
         }
 
-        /// <summary>Flat expanding disc on the floor. Used for Nova.</summary>
-        public static void Ring(Vector3 center, Color color, float radius)
+        /// <summary>Flat expanding disc on the floor. 'groundPoint' should be on the floor (see GroundBelow).</summary>
+        public static void Ring(Vector3 groundPoint, Color color, float radius)
         {
             var go = CreateVisualPrimitive(PrimitiveType.Cylinder, GlowMaterial(color));
-            go.name = "NovaRing";
-            go.transform.position = new Vector3(center.x, center.y - 0.95f, center.z);
+            go.name = "Ring";
+            go.transform.position = groundPoint + Vector3.up * 0.05f;
             float d = radius * 2f;
             go.AddComponent<GrowAndVanish>().Init(new Vector3(0.5f, 0.02f, 0.5f), new Vector3(d, 0.02f, d), 0.2f);
+        }
+
+        /// <summary>Floor point under a position (raycast down), or 1 unit lower if nothing is found.</summary>
+        public static Vector3 GroundBelow(Vector3 p)
+        {
+            if (Physics.Raycast(p + Vector3.up * 0.5f, Vector3.down, out RaycastHit hit, 6f, ~0, QueryTriggerInteraction.Ignore)
+                && hit.collider.GetComponentInParent<HollowTower.Core.Health>() == null)
+                return hit.point;
+            return p - Vector3.up;
+        }
+
+        /// <summary>Middle of a character's body (works for any pivot: feet or center).</summary>
+        public static Vector3 CenterOf(HollowTower.Core.Health h)
+        {
+            var col = h.GetComponentInChildren<Collider>();
+            return col != null && col.enabled ? col.bounds.center : h.transform.position + Vector3.up;
         }
 
         /// <summary>Jagged line between two points. Used for Chain jumps.</summary>
         public static void ChainArc(Vector3 from, Vector3 to, Color color)
         {
             var go = new GameObject("ChainArc");
-            var lr = go.AddComponent<LineRenderer>();
-            lr.material = UnlitMaterial(color);
-            lr.startColor = lr.endColor = color;
-            lr.widthMultiplier = 0.08f;
-            lr.useWorldSpace = true;
-            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-
+            var lr = CreateLine(go, color, 0.08f);
             const int segments = 8;
             lr.positionCount = segments + 1;
             for (int i = 0; i <= segments; i++)
@@ -70,6 +80,17 @@ namespace HollowTower.Spells
                 lr.SetPosition(i, p);
             }
             Object.Destroy(go, 0.15f);
+        }
+
+        public static LineRenderer CreateLine(GameObject go, Color color, float width)
+        {
+            var lr = go.AddComponent<LineRenderer>();
+            lr.material = UnlitMaterial(color);
+            lr.startColor = lr.endColor = color;
+            lr.widthMultiplier = width;
+            lr.useWorldSpace = true;
+            lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            return lr;
         }
 
         // ---------- helpers ----------

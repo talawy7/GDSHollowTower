@@ -102,6 +102,7 @@ namespace HollowTower.Testing
             Color tint = baseColor;
             if (status != null && status.IsSlowed) tint = Color.Lerp(tint, SlowColor, 0.7f);
             if (status != null && status.IsBurning) tint = Color.Lerp(tint, BurnColor, 0.7f);
+            if (status != null && (status.IsFrozen || status.IsStunned)) tint = status.IsFrozen ? new Color(0.8f, 0.95f, 1f) : new Color(1f, 1f, 0.5f);
             if (flash > 0f) { flash -= Time.deltaTime; tint = Color.white; }
 
             foreach (var r in renderers)

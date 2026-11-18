@@ -1,11 +1,14 @@
 // AI-assisted: Claude (Anthropic) wrote the first version of this script.
 // Team changes: (none yet)
 //
-// Shared "what happens when a spell touches an enemy" logic, used by every
-// delivery: damage, the element's effect (burn / slow), and chain jumps.
+// Shared "a spell touched an enemy" logic used by every attack:
+// damage (with Weaken), the hit's status effects, elemental reactions,
+// and the OnDamageDealt event that charges the player's Q.
 
+using System;
 using System.Collections.Generic;
 using HollowTower.Core;
+using HollowTower.Data;
 using UnityEngine;
 
 namespace HollowTower.Spells
@@ -14,53 +17,47 @@ namespace HollowTower.Spells
     {
         private static readonly Collider[] overlapBuffer = new Collider[64];
 
-        /// <summary>Hit one target, then chain from it if the spell can chain.</summary>
-        /// <param name="exclude">Targets chains must not jump to (e.g. everything a Nova already hit).</param>
-        public static void Hit(SpellPayload p, Health target, ICollection<Health> exclude = null)
+        /// <summary>(source, amount) — every bit of damage actually dealt. The Q charge listens to this.</summary>
+        public static event Action<GameObject, float> OnDamageDealt;
+
+        /// <summary>One spell hit on one target.</summary>
+        public static void Hit(SpellPayload p, Health target)
         {
-            ApplyTo(p, target, p.damage);
-            ChainFrom(p, target, p.damage, exclude);
+            ApplyHit(target, p.hit, p.element, p.caster, p.casterTeam);
         }
 
-        /// <summary>Damage + element effect on one target. No chaining.</summary>
-        public static void ApplyTo(SpellPayload p, Health target, float damage)
+        /// <summary>Damage + status effects + elemental reaction on one target.</summary>
+        public static void ApplyHit(Health target, HitEffect hit, ElementData element, GameObject caster, Team casterTeam)
         {
-            if (!IsEnemy(target, p.casterTeam)) return;
+            if (!IsEnemy(target, casterTeam)) return;
 
-            target.TakeDamage(damage, p.caster);
-            if (target.IsDead || p.element == null) return;
+            var status = StatusEffects.GetOrAdd(target);
+            if (hit.damage > 0f) DealDamage(target, hit.damage, caster);
+            if (target.IsDead) return;
 
-            var e = p.element;
-            if (e.burnDamagePerSecond > 0f || e.slowAmount > 0f)
-            {
-                var status = target.GetComponent<StatusEffects>();
-                if (status == null) status = target.gameObject.AddComponent<StatusEffects>();
-                status.ApplyBurn(e.burnDamagePerSecond, e.burnDuration, p.caster);
-                status.ApplySlow(e.slowAmount, e.slowDuration);
-            }
+            status.ApplyHitEffect(hit, caster);
+            if (element != null) ElementalReactions.OnElementApplied(target, status, element.type, caster, casterTeam);
         }
 
-        /// <summary>GDD 4.4 Chain: the spell jumps to nearby enemies, losing some damage each jump.</summary>
-        public static void ChainFrom(SpellPayload p, Health first, float damage, ICollection<Health> exclude = null)
+        /// <summary>Raw damage (no effects). Applies Weaken and reports damage for the Q charge.</summary>
+        public static void DealDamage(Health target, float amount, GameObject source)
         {
-            if (p.chainJumps <= 0 || first == null) return;
+            if (target == null || target.IsDead || amount <= 0f) return;
 
-            var visited = new HashSet<Health> { first };
-            if (exclude != null) foreach (var h in exclude) visited.Add(h);
+            var status = target.GetComponent<StatusEffects>();
+            if (status != null) amount *= status.DamageTakenMultiplier;
 
-            Health current = first;
-            float dmg = damage;
-            for (int i = 0; i < p.chainJumps; i++)
-            {
-                Health next = FindNearestEnemy(current.transform.position, p.chainRange, p.casterTeam, visited);
-                if (next == null) break;
+            float before = target.Current;
+            target.TakeDamage(amount, source);
+            float dealt = before - target.Current;
+            if (dealt > 0f && source != null) OnDamageDealt?.Invoke(source, dealt);
+        }
 
-                dmg *= p.chainFalloff;
-                SpellVisuals.ChainArc(current.transform.position, next.transform.position, p.Color);
-                ApplyTo(p, next, dmg);
-                visited.Add(next);
-                current = next;
-            }
+        /// <summary>Hits every enemy in a circle (Nova explosion).</summary>
+        public static void Explode(SpellPayload p, Vector3 center, float radius)
+        {
+            foreach (var h in FindEnemiesInRadius(center, radius, p.casterTeam)) Hit(p, h);
+            SpellVisuals.Ring(SpellVisuals.GroundBelow(center), p.Color, radius);
         }
 
         public static bool IsEnemy(Health h, Team casterTeam)
@@ -68,7 +65,6 @@ namespace HollowTower.Spells
             return h != null && !h.IsDead && h.Team != casterTeam;
         }
 
-        /// <summary>Closest living enemy within range, skipping anything in 'exclude'.</summary>
         public static Health FindNearestEnemy(Vector3 from, float range, Team casterTeam, ICollection<Health> exclude = null)
         {
             int count = Physics.OverlapSphereNonAlloc(from, range, overlapBuffer, ~0, QueryTriggerInteraction.Ignore);
@@ -79,14 +75,13 @@ namespace HollowTower.Spells
                 var h = overlapBuffer[i].GetComponentInParent<Health>();
                 if (!IsEnemy(h, casterTeam)) continue;
                 if (exclude != null && exclude.Contains(h)) continue;
-
                 float d = (h.transform.position - from).sqrMagnitude;
                 if (d < bestDist) { bestDist = d; best = h; }
             }
             return best;
         }
 
-        /// <summary>All living enemies within range (each listed once).</summary>
+        /// <summary>All living enemies within range, each listed once, nearest first.</summary>
         public static List<Health> FindEnemiesInRadius(Vector3 center, float radius, Team casterTeam)
         {
             var result = new List<Health>();
@@ -96,6 +91,8 @@ namespace HollowTower.Spells
                 var h = overlapBuffer[i].GetComponentInParent<Health>();
                 if (IsEnemy(h, casterTeam) && !result.Contains(h)) result.Add(h);
             }
+            result.Sort((a, b) =>
+                (a.transform.position - center).sqrMagnitude.CompareTo((b.transform.position - center).sqrMagnitude));
             return result;
         }
     }

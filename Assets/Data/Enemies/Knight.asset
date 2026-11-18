@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06d2713496cf1814eae2f7fc4292f67b, type: 3}
+  m_Name: Knight
+  m_EditorClassIdentifier: Assembly-CSharp::HollowTower.Data.EnemyData
+  id: Knight
+  displayName: Knight
+  maxHealth: 90
+  moveSpeed: 2.2
+  turnSpeed: 240
+  detectionRange: 14
+  attackDamage: 20
+  attackRange: 2.4
+  attackWindup: 0.9
+  attackRecovery: 0.8
+  attackCooldown: 1.6
+  attackAreaRadius: 1.7
+  preferredDistance: 8
+  retreatDistance: 4
+  projectileSpeed: 7
+  projectileRadius: 0.3
+  projectileColor: {r: 0.6, g: 1, b: 0.8, a: 1}
+  hoverHeight: 0
+  soulInk: 3
+  eliteHealthMultiplier: 2.5
+  eliteDamageMultiplier: 1.5
+  eliteScale: 1.25

@@ -19,6 +19,7 @@ namespace HollowTower.Core
         [SerializeField] private Team team = Team.Player;
 
         public Team Team => team;
+        public void SetTeam(Team newTeam) => team = newTeam;
 
         public float Max => maxHealth;
         public float Current { get; private set; }

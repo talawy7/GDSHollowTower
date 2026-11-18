@@ -1,11 +1,11 @@
 // AI-assisted: Claude (Anthropic) wrote the first version of this script.
 // Team changes: (none yet)
 //
-// Moving spell ball, used for both Projectile and Orb (GDD 4.3):
-//   Projectile: fast, stops at the first enemy.
-//   Orb:        slow, passes through enemies (each is hit once).
-// Bounce modifier: bounces off walls; a Projectile also redirects to the next enemy.
-// Uses sphere casts every frame, so fast shots can't pass through thin walls.
+// A moving spell ball. Used by every attack (GDD 5.3):
+//   Normal / Projectile: stops at the first enemy
+//   Orb:                 passes through enemies (each hit once)
+//   Nova:                explodes on impact and hits everything around it
+// Uses sphere casts every frame so fast shots can't pass through thin walls.
 
 using System.Collections.Generic;
 using HollowTower.Core;
@@ -15,18 +15,12 @@ namespace HollowTower.Spells
 {
     public class SpellProjectile : MonoBehaviour
     {
-        private const float BounceSeekRange = 12f;
-
         private SpellPayload payload;
         private Vector3 direction;
-        private float speed;
-        private float radius;
-        private float distanceLeft;
+        private float speed, radius, distanceLeft, explosionRadius;
         private bool pierces;
-        private int bouncesLeft;
 
         private readonly HashSet<Health> alreadyHit = new HashSet<Health>();
-        private Health lastHit;
         private readonly RaycastHit[] hitBuffer = new RaycastHit[32];
 
         public static SpellProjectile Spawn(SpellPayload p, Vector3 origin, Vector3 dir)
@@ -37,13 +31,13 @@ namespace HollowTower.Spells
             var proj = go.AddComponent<SpellProjectile>();
             proj.payload = p;
             proj.direction = Flat(dir);
-            proj.speed = p.delivery.speed * p.element.speedMultiplier;
-            proj.radius = p.delivery.radius;
-            proj.distanceLeft = p.delivery.maxDistance;
-            proj.pierces = p.delivery.piercesEnemies;
-            proj.bouncesLeft = p.bounces;
+            proj.speed = p.attack.speed;
+            proj.radius = p.attack.radius;
+            proj.distanceLeft = p.attack.maxDistance;
+            proj.pierces = p.attack.piercesEnemies;
+            proj.explosionRadius = p.attack.explosionRadius;
 
-            SpellVisuals.AttachBall(go.transform, p.Color, p.delivery.radius * 2f);
+            SpellVisuals.AttachBall(go.transform, p.Color, p.attack.radius * 2f);
             return proj;
         }
 
@@ -58,15 +52,14 @@ namespace HollowTower.Spells
             for (int i = 0; i < count; i++)
             {
                 RaycastHit hit = hitBuffer[i];
-                // Overlapping at the start of the cast: Unity gives point = zero.
-                Vector3 point = hit.distance <= 0f ? pos : hit.point;
-                Vector3 normal = hit.distance <= 0f ? -direction : hit.normal;
+                Vector3 point = hit.distance <= 0f ? pos : hit.point; // overlapping at start: Unity gives zero
 
                 var h = hit.collider.GetComponentInParent<Health>();
                 if (h != null)
                 {
-                    // Our own side, or dead: fly through.
-                    if (!SpellHit.IsEnemy(h, payload.casterTeam)) continue;
+                    if (!SpellHit.IsEnemy(h, payload.casterTeam)) continue; // our side or dead: fly through
+
+                    if (explosionRadius > 0f) { Explode(point); return; }
 
                     if (pierces)
                     {
@@ -74,52 +67,36 @@ namespace HollowTower.Spells
                         continue;
                     }
 
-                    if (h == lastHit) continue; // just bounced off this one
                     SpellHit.Hit(payload, h);
-
-                    if (bouncesLeft > 0)
-                    {
-                        alreadyHit.Add(h);
-                        Health next = SpellHit.FindNearestEnemy(h.transform.position, BounceSeekRange, payload.casterTeam, alreadyHit);
-                        if (next != null)
-                        {
-                            bouncesLeft--;
-                            lastHit = h;
-                            transform.position = new Vector3(point.x, pos.y, point.z);
-                            direction = Flat(next.transform.position - transform.position);
-                            SpellVisuals.Burst(point, payload.Color, radius * 3f);
-                            return;
-                        }
-                    }
-
                     Impact(point);
                     return;
                 }
 
-                // Anything without Health is a wall / pillar / prop.
-                if (bouncesLeft > 0)
-                {
-                    bouncesLeft--;
-                    lastHit = null;
-                    direction = Flat(Vector3.Reflect(direction, normal));
-                    Vector3 bouncePos = point + normal * (radius + 0.02f);
-                    transform.position = new Vector3(bouncePos.x, pos.y, bouncePos.z);
-                    SpellVisuals.Burst(point, payload.Color, radius * 3f);
-                    return;
-                }
-
-                Impact(point);
+                // No Health = wall, pillar or prop.
+                if (explosionRadius > 0f) Explode(point);
+                else Impact(point);
                 return;
             }
 
             transform.position = pos + direction * step;
             distanceLeft -= step;
-            if (distanceLeft <= 0f) Impact(transform.position);
+            if (distanceLeft <= 0f)
+            {
+                if (explosionRadius > 0f) Explode(transform.position);
+                else Impact(transform.position);
+            }
+        }
+
+        private void Explode(Vector3 point)
+        {
+            SpellHit.Explode(payload, point, explosionRadius);
+            SpellVisuals.Burst(point, payload.Color, explosionRadius * 0.8f);
+            Destroy(gameObject);
         }
 
         private void Impact(Vector3 point)
         {
-            SpellVisuals.Burst(point, payload.Color, Mathf.Max(0.6f, radius * 4f));
+            SpellVisuals.Burst(point, payload.Color, Mathf.Max(0.5f, radius * 3f));
             Destroy(gameObject);
         }
 
@@ -131,7 +108,6 @@ namespace HollowTower.Spells
 
         private static void SortByDistance(RaycastHit[] hits, int count)
         {
-            // Small insertion sort: SphereCastNonAlloc results are unordered.
             for (int i = 1; i < count; i++)
             {
                 var key = hits[i];
